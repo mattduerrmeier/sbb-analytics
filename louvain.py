@@ -92,6 +92,27 @@ def shared_degree(G: nx.Graph, community_1: set[Any], community_2: set[Any]) -> 
     return 2 * len(d_ij)
 
 
+def hyper_nodes(G: nx.Graph, communities: list[set[Any]]) -> nx.Graph:
+    new_G = nx.Graph()
+
+    for counter_1, comm_1 in enumerate(communities):
+        for counter_2, comm_2 in enumerate(communities):
+            degree = 0
+            if comm_1 == comm_2:
+                pass
+            for node_1 in list(comm_1):
+                for node_2 in list(comm_2):
+                    try:
+                        if G.has_edge(node_1, node_2):
+                            degree += 1
+                    except:
+                        pass
+            if degree != 0:
+                new_G.add_edge(counter_1, counter_2, weight=degree)
+
+    return new_G
+
+
 # Graph Example from the lecture slides
 edgelist = [
     (0, 2),
@@ -126,3 +147,10 @@ edgelist = [
 
 G = nx.Graph(edgelist)
 comms = louvain(G)
+print(comms)
+new_graph = hyper_nodes(G, comms)
+comms_2 = louvain(new_graph)
+print(comms_2)
+new_graph_2 = hyper_nodes(G, comms_2)
+comms_3 = louvain(new_graph_2)
+print(comms_3)  # should return same community as comms_2, if we refer to the example given in the lecture
