@@ -5,7 +5,7 @@ if [[ "$EUID" -ne 0 ]]; then
 	exit
 fi
 
-read -r -p "This script will drop your neo4j database. Are you sure you want to proceed? [Y/n] " response
+read -r -p "This script will drop your neo4j database. Are you sure you want to proceed? [y/N] " response
 if [[ "$response" =~ ^([yY][eE][sS]|[yY])$ ]]; then
 	echo "Stopping neo4j..."
 	systemctl stop neo4j
