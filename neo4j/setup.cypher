@@ -8,10 +8,6 @@ LOAD CSV WITH HEADERS FROM "file:///agency.txt" AS row
 CREATE (a:Agency {
     id: row["agency_id"],
     name: row["agency_name"]
-    // url: row["agency_url"],
-    // timezone: row["agency_timezone"],
-    // lang: row["agency_lang"],
-    // phone: row["agency_phone"]
 });
 
 // Routes
@@ -20,7 +16,6 @@ MERGE (a:Agency {id : row["agency_id"]})
 CREATE (r:Route {
     id: row["route_id"],
     short_name: row["route_short_name"],
-    // long_name: row["route_long_name"],
     desc: row["route_desc"],
     type: toInteger(row["route_type"])
 })
@@ -36,7 +31,6 @@ CALL {
         service_id: row["service_id"],
         headsign: row["trip_headsign"],
         short_name: toInteger(row["trip_short_name"])
-        // direction_id: toInteger(row["direction_id"])
     })
     CREATE (r)<-[rel:USES]-(t)
 } IN TRANSACTIONS;
