@@ -78,9 +78,10 @@ def modularity_gain(
 ) -> float:
     d_ij = shared_degree(G, community_1, community_2)
 
-    # Use weights of the edge intead; if there is no weight use 1
-    d_i = sum([G.degree(n, data="weight", default=1) for n in community_1])
-    d_j = sum([G.degree(n, data="weight", default=1) for n in community_2])
+    # Use weights of the edges intead; if there is no weight use 1
+    d_i = sum([w for u, v, w in G.edges(community_1, data="weight", default=1)])
+    d_j = sum([w for u, v, w in G.edges(community_2, data="weight", default=1)])
+    print(d_i, d_j)
 
     r = 1 / (2 * m)
     l = d_ij - (d_i * d_j) / m
@@ -150,11 +151,10 @@ edgelist = [
 G = nx.Graph(edgelist)
 comms = louvain(G)
 print(comms)
-new_graph = hyper_nodes(G, comms)
-comms_2 = louvain(new_graph)
-print(comms_2)
-new_graph_2 = hyper_nodes(G, comms_2)
-comms_3 = louvain(new_graph_2)
-print(
-    comms_3
-)  # should return same community as comms_2, if we refer to the example given in the lecture
+# new_graph = hyper_nodes(G, comms)
+# comms_2 = louvain(new_graph)
+# print(comms_2)
+# new_graph_2 = hyper_nodes(G, comms_2)
+# comms_3 = louvain(new_graph_2)
+## should return same community as comms_2, if we refer to the example given in the lecture
+# print(comms_3)
