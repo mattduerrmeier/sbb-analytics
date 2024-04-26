@@ -1,7 +1,4 @@
 #!/bin/sh
 
-cypher-shell -f agency.cypher
-cypher-shell -f routes.cypher
-cypher-shell -f trips.cypher
-cypher-shell -f stops.cypher
-cypher-shell -f stop_times.cypher
+echo "This script may take a while to insert all the data (~15 minutes)."
+time cypher-shell -f setup.cypher
