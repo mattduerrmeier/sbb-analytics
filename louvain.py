@@ -3,7 +3,6 @@ from typing import Any
 
 
 def louvain(G: nx.Graph) -> list[set[Any]]:
-    # TODO: fix m such that the value is the the original one
     m = len(G.edges())
     # 1: init each node as a community
     communities: list[set[Any]] = [{x} for x in sorted(G.nodes())]
@@ -26,7 +25,25 @@ def louvain(G: nx.Graph) -> list[set[Any]]:
         if original_communities == communities:
             evolved = False
 
-    # 5: TODO: create hypernodes
+    # 5: create hypergraph
+    G_hyper = hyper_graph(G, communities)
+    communities: list[set[Any]] = [{x} for x in sorted(G_hyper.nodes())]
+
+    evolved_new = True
+    while evolved_new:
+        original_communities = communities.copy()
+        for v_i in sorted(G_hyper.nodes()):
+            # 2: remove the node from its community
+            communities = rm_vi_from_its_community(communities, v_i)
+            neighbors_communities = get_neighbors_communities(G_hyper.neighbors(v_i), communities)
+
+            # 3: add node to the community that maximizes delta
+            # TODO: create other function to calculate highest
+            highest_delta_community = max_delta_hypergraph(G_hyper, {v_i}, neighbors_communities, m)
+            highest_delta_community.add(v_i)
+
+        if original_communities == communities:
+            evolved_new = False
 
     return communities
 
@@ -63,9 +80,7 @@ def rm_vi_from_its_community(communities: list[set[Any]], v_i: Any) -> list[set[
     return communities
 
 
-def max_delta(
-    G: nx.Graph, community_1: set[Any], neigh_communities: list[set[Any]], m: int
-) -> set[Any]:
+def max_delta(G: nx.Graph, community_1: set[Any], neigh_communities: list[set[Any]], m: int) -> set[Any]:
     deltas = [
         modularity_gain(G, community_1, community_2, m)
         for community_2 in neigh_communities
@@ -73,15 +88,34 @@ def max_delta(
     return neigh_communities[deltas.index(max(deltas))]
 
 
-def modularity_gain(
-    G: nx.Graph, community_1: set[Any], community_2: set[Any], m: int
-) -> float:
-    d_ij = shared_degree(G, community_1, community_2)
+def max_delta_hypergraph(G: nx.Graph, community_1: set[Any], neigh_communities: list[set[Any]], m: int) -> set[Any]:
+    deltas = [
+        modularity_gain_hyper(G, community_1, community_2, m)
+        for community_2 in neigh_communities
+    ]
+    return neigh_communities[deltas.index(max(deltas))]
 
-    # Use weights of the edges intead; if there is no weight use 1
-    d_i = sum([w for u, v, w in G.edges(community_1, data="weight", default=1)])
-    d_j = sum([w for u, v, w in G.edges(community_2, data="weight", default=1)])
-    print(d_i, d_j)
+def modularity_gain(
+    G: nx.Graph, community_1: set[Any], community_2: set[Any], m: int) -> float:
+    d_ij = shared_degree(G, community_1, community_2)
+    d_i = sum([G.degree(n) for n in community_1])
+    d_j = sum([G.degree(n) for n in community_2])
+
+    r = 1 / (2 * m)
+    l = d_ij - (d_i * d_j) / m
+    return r * l
+
+def modularity_gain_hyper(
+    G: nx.Graph, community_1: set[Any], community_2: set[Any], m: int) -> float:
+    (c_1,) = community_1
+    c_2 = list(community_2)
+    d_ij = 0
+    for i in c_2:
+        d_ij += G.number_of_edges(c_1, i)
+    d_ij = d_ij*2
+
+    d_i = sum(1 for n in G.edges() if c_1 in n)
+    d_j = sum(1 for n in G.edges() for id in range(len(c_2)) if c_2[id] in n)
 
     r = 1 / (2 * m)
     l = d_ij - (d_i * d_j) / m
@@ -95,24 +129,21 @@ def shared_degree(G: nx.Graph, community_1: set[Any], community_2: set[Any]) -> 
     return 2 * len(d_ij)
 
 
-def hyper_nodes(G: nx.Graph, communities: list[set[Any]]) -> nx.Graph:
-    new_G = nx.Graph()
+def hyper_graph(G: nx.Graph, communities: list[set[Any]]) -> nx.Graph:
+    new_G = nx.MultiGraph()
 
     for counter_1, comm_1 in enumerate(communities):
         for counter_2, comm_2 in enumerate(communities):
-            degree = 0
-            if comm_1 == comm_2:
+            if counter_1 > counter_2:
                 pass
-            for node_1 in list(comm_1):
-                for node_2 in list(comm_2):
-                    try:
-                        if G.has_edge(node_1, node_2):
-                            degree += 1
-                    except:
-                        pass
-            if degree != 0:
-                new_G.add_edge(counter_1, counter_2, weight=degree)
-
+            else:
+                for node_1 in list(comm_1):
+                    for node_2 in list(comm_2):
+                        try:
+                            if G.has_edge(node_1, node_2):
+                                new_G.add_edge(counter_1, counter_2)
+                        except:
+                            pass
     return new_G
 
 
@@ -148,24 +179,8 @@ edgelist = [
     (11, 13),
 ]
 
+
 G = nx.Graph(edgelist)
-comms = louvain(G)
-print(comms)
 
-
-G_simple = nx.Graph()
-G_simple.add_edge(1, 2)
-G_simple.add_edge(1, 3)
-G_simple.add_edge(1, 5)
-G_simple.add_edge(2, 3)
-G_simple.add_edge(3, 4)
-G_simple.add_edge(4, 5)
-comm = louvain(G_simple)
-print(comm)
-# new_graph = hyper_nodes(G, comms)
-# comms_2 = louvain(new_graph)
-# print(comms_2)
-# new_graph_2 = hyper_nodes(G, comms_2)
-# comms_3 = louvain(new_graph_2)
-## should return same community as comms_2, if we refer to the example given in the lecture
-# print(comms_3)
+final_communities = louvain(G)
+print(final_communities)
