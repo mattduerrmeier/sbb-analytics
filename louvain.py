@@ -151,6 +151,17 @@ edgelist = [
 G = nx.Graph(edgelist)
 comms = louvain(G)
 print(comms)
+
+
+G_simple = nx.Graph()
+G_simple.add_edge(1, 2)
+G_simple.add_edge(1, 3)
+G_simple.add_edge(1, 5)
+G_simple.add_edge(2, 3)
+G_simple.add_edge(3, 4)
+G_simple.add_edge(4, 5)
+comm = louvain(G_simple)
+print(comm)
 # new_graph = hyper_nodes(G, comms)
 # comms_2 = louvain(new_graph)
 # print(comms_2)
