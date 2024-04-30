@@ -130,20 +130,21 @@ def shared_degree(G: nx.Graph, community_1: set[Any], community_2: set[Any]) -> 
 
 
 def hyper_graph(G: nx.Graph, communities: list[set[Any]]) -> nx.Graph:
-    new_G = nx.MultiGraph()
+    new_G = nx.Graph()
 
-    for counter_1, comm_1 in enumerate(communities):
-        for counter_2, comm_2 in enumerate(communities):
-            if counter_1 > counter_2:
-                pass
-            else:
-                for node_1 in list(comm_1):
-                    for node_2 in list(comm_2):
-                        try:
-                            if G.has_edge(node_1, node_2):
-                                new_G.add_edge(counter_1, counter_2)
-                        except:
-                            pass
+    node2com = {}
+    for i, com in enumerate(communities):
+        new_G.add_node(i, nodes=com)
+        for n in com:
+            node2com[n] = i
+
+    for n1, n2, wt in G.edges(data=True):
+        com1 = node2com[n1]
+        com2 = node2com[n2]
+
+        temp_wt = new_G.get_edge_data(com1, com2, default={"weight": 0})
+        new_G.add_edge(com1, com2, weight=wt["weight"] + temp_wt["weight"])
+
     return new_G
 
 
@@ -180,7 +181,16 @@ edgelist = [
 ]
 
 
-G = nx.Graph(edgelist)
+toy_graph = [
+    (0, 1),
+    (0, 2),
+    (0, 3),
+    (1, 2),
+    (1, 3),
+    (2, 4),
+]
+G = nx.Graph(toy_graph)
 
-final_communities = louvain(G)
-print(final_communities)
+# this is important! we need this in louvain at some point
+G.add_weighted_edges_from(G.edges(data="weight", default=1))
+H = hyper_graph(G, [{0, 1, 3}, {2, 4}])
