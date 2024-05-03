@@ -45,7 +45,7 @@ def leiden(G: nx.Graph) -> list[set[Any]]:
             highest_delta_community = max_delta_hypergraph(
                 G_hyper, {v_i}, neighbors_communities, m
             )
-            highest_delta_community.add(v_i)
+            highest_delta_community[0].add(v_i)
 
         if original_communities == communities:
             evolved_new = False
@@ -165,7 +165,7 @@ def hyper_graph(G: nx.Graph, communities: list[set[Any]]) -> nx.Graph:
     return new_G
 
 
-def merge_nodes_fast(G, communities, n_edges):
+def move_nodes_fast(G, communities, n_edges):
     Q = [G.nodes]
     while len(Q) != 0:
         vi = Q.pop()
@@ -183,15 +183,21 @@ def refine_partitions(G, communities):
     singleton_partitions: list[set[Any]] = [{x} for x in G.nodes()]
     for sub in communities:
         partition_refined = merge_nodes_subset(G, communities, singleton_partitions)
-    return
+    return partition_refined
 
 
 def merge_nodes_subset(G, communities, subset):
-    R = ?
+    R = [v_i for v_i in subset if
+         len([G.has_edges(v_i, incident) for incident in [x for (y, x) in test_G.edges(v_i) ]]) >=
+         G.degree(v_i) * (sum([G.degree(x) for x in subset]) - G.degree(v_i))]
     for vi in R:
         l_mod_gain = []
-        if modularity_gain_hyper(G, vi, subset) > 0:
-            l_mod_gain.append()
+        if modularity_gain_hyper(G, vi, subset, len(G.edges)) > 0:
+            l_mod_gain.append(modularity_gain_hyper(G, vi, subset, len(G.edges)))
+
+
+
+    return communities
 
 
 
@@ -244,8 +250,10 @@ toy_graph = [
 #
 # sub_G = nx.Graph(G.subgraph(max_connected_comp))
 
-test_G = nx.Graph(toy_graph)
-merge_nodes_fast(test_G)
+test_G = nx.Graph(edgelist)
+
+
+leiden(test_G)
 start = time.time()
 final_communities = leiden(test_G)
 stop = time.time()
