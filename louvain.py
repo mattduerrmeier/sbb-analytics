@@ -86,21 +86,15 @@ def max_delta(
     return neigh_communities[deltas.index(max(deltas))]
 
 
-# TODO: make this function faster. Can we use degree() in a way or another instead of edges()?
 def modularity_gain(G: nx.Graph, v_i: Any, community: set[Any], m: int) -> float:
-    d_ij = 0
-    d_i = 0
+    # creating the dict once is faster than accessing the degrees twice
+    degrees = dict(G.degree(community | {v_i}, weight="weight"))
 
-    for _, n2, wt in G.edges(v_i, data="weight", default=1):
-        d_i += wt
-        if n2 in community:
-            d_ij += wt
-    d_ij = d_ij * 2
-
-    d_j = 0
-    for n in community:
-        for _, _, wt in G.edges(n, data="weight", default=1):
-            d_j += wt
+    d_ij = 2 * sum(
+        [wt for _, v, wt in G.edges(v_i, data="weight", default=1) if v in community]
+    )
+    d_i = degrees[v_i]
+    d_j = sum([degrees[n] for n in community])
 
     return 1 / (2 * m) * (d_ij - (d_i * d_j) / m)
 
