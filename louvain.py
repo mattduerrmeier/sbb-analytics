@@ -14,13 +14,13 @@ def louvain(G: nx.Graph) -> list[set[Any]]:
         original_communities = communities.copy()
         for v_i in G.nodes():
             # 2: remove the node from its community
-            communities = rm_vi_from_its_community(communities, v_i)
+            communities = remove_v_i(communities, v_i)
 
             neighbors_communities = get_neighbors_communities(
                 G.neighbors(v_i), communities
             )
             # 3: add node to the community that maximizes delta
-            highest_delta_community = max_delta(G, {v_i}, neighbors_communities, m)
+            highest_delta_community = max_delta(G, v_i, neighbors_communities, m)
             highest_delta_community.add(v_i)
 
         # 4: stop if process converges
@@ -29,30 +29,28 @@ def louvain(G: nx.Graph) -> list[set[Any]]:
 
     # 5: create hypergraph
     G_hyper = hyper_graph(G, communities)
-    communities: list[set[Any]] = [{x} for x in G_hyper.nodes()]
+    communities = [{x} for x in G_hyper.nodes()]
 
-    evolved_new = True
-    while evolved_new:
+    evolved = True
+    while evolved:
         original_communities = communities.copy()
         for v_i in G_hyper.nodes():
             # 2: remove the node from its community
-            communities = rm_vi_from_its_community(communities, v_i)
+            communities = remove_v_i(communities, v_i)
             neighbors_communities = get_neighbors_communities(
                 G_hyper.neighbors(v_i), communities
             )
             # 3: add node to the community that maximizes delta
-            # TODO: create other function to calculate highest
-            highest_delta_community = max_delta_hypergraph(
-                G_hyper, {v_i}, neighbors_communities, m
-            )
+            highest_delta_community = max_delta(G_hyper, v_i, neighbors_communities, m)
             highest_delta_community.add(v_i)
 
         if original_communities == communities:
-            evolved_new = False
+            evolved = False
 
     return communities
 
 
+# TODO: Improve this function. How can we get the neighbors without the nested for loop?
 def get_neighbors_communities(
     neighbors: list[Any], communities: list[set[Any]]
 ) -> list[Any]:
@@ -68,82 +66,43 @@ def get_neighbors_communities(
     return neigh_communities
 
 
-# Step 2: remove (v_i) from its community
-def rm_vi_from_its_community(communities: list[set[Any]], v_i: Any) -> list[set[Any]]:
-    removed = False
-    counter = 0
-    while removed == False:
-        if v_i in communities[counter]:
-            communities[counter].remove(v_i)
-            if len(communities[counter]) == 0:
-                del communities[counter]
-
-            removed = True
-        else:
-            counter += 1
+# removes v_i from its community
+def remove_v_i(communities: list[set[Any]], v_i: Any) -> list[set[Any]]:
+    for com in communities:
+        if v_i in com:
+            com.remove(v_i)
+            # if the set is empty we should remove it
+            if len(com) == 0:
+                communities.remove(com)
+            break
 
     return communities
 
 
 def max_delta(
-    G: nx.Graph, community_1: set[Any], neigh_communities: list[set[Any]], m: int
+    G: nx.Graph, v_i: Any, neigh_communities: list[set[Any]], m: int
 ) -> set[Any]:
-    deltas = [
-        modularity_gain(G, community_1, community_2, m)
-        for community_2 in neigh_communities
-    ]
+    deltas = [modularity_gain(G, v_i, community, m) for community in neigh_communities]
     return neigh_communities[deltas.index(max(deltas))]
 
 
-def max_delta_hypergraph(
-    G: nx.Graph, community_1: set[Any], neigh_communities: list[set[Any]], m: int
-) -> set[Any]:
-    deltas = [
-        modularity_gain_hyper(G, community_1, community_2, m)
-        for community_2 in neigh_communities
-    ]
-    return neigh_communities[deltas.index(max(deltas))]
-
-
-def modularity_gain(
-    G: nx.Graph, community_1: set[Any], community_2: set[Any], m: int
-) -> float:
-    d_ij = shared_degree(G, community_1, community_2)
-    d_i = sum([G.degree(n) for n in community_1])
-    d_j = sum([G.degree(n) for n in community_2])
-
-    r = 1 / (2 * m)
-    l = d_ij - (d_i * d_j) / m
-    return r * l
-
-
-def modularity_gain_hyper(
-    G: nx.Graph, community_1: set[Any], community_2: set[Any], m: int
-) -> float:
+# TODO: make this function faster. Can we use degree() in a way or another instead of edges()?
+def modularity_gain(G: nx.Graph, v_i: Any, community: set[Any], m: int) -> float:
     d_ij = 0
     d_i = 0
-    for n in community_1:
-        for _, n2, wt in G.edges(n, data=True):
-            d_i += wt["weight"]
-            if n2 in community_2:
-                d_ij += wt["weight"]
+
+    for _, n2, wt in G.edges(v_i, data="weight", default=1):
+        d_i += wt
+        if n2 in community:
+            d_ij += wt
     d_ij = d_ij * 2
 
     d_j = 0
-    for n in community_2:
-        for _, _, wt in G.edges(n, data=True):
-            d_j += wt["weight"]
+    for n in community:
+        for _, _, wt in G.edges(n, data="weight", default=1):
+            d_j += wt
 
-    r = 1 / (2 * m)
-    l = d_ij - (d_i * d_j) / m
-    return r * l
-
-
-def shared_degree(G: nx.Graph, community_1: set[Any], community_2: set[Any]) -> int:
-    # do we need to remove duplicates?
-    neighbors_comm_1 = [neigh for n in community_1 for neigh in G[n]]
-    d_ij = [neigh for neigh in neighbors_comm_1 if neigh in community_2]
-    return 2 * len(d_ij)
+    return 1 / (2 * m) * (d_ij - (d_i * d_j) / m)
 
 
 def hyper_graph(G: nx.Graph, communities: list[set[Any]]) -> nx.Graph:
