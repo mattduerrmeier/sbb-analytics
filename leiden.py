@@ -1,5 +1,5 @@
 import networkx as nx
-from louvain import get_neighbors_communities, remove_v_i, modularity_gain, hyper_graph
+from louvain import get_neighbors_communities, remove_v, modularity_gain, hyper_graph
 from math import exp
 from random import choices
 from typing import Any
@@ -7,14 +7,23 @@ import time
 
 
 def leiden(G: nx.Graph) -> list[set[Any]]:
-    # TODO: implement the algorithm similarly to louvain
-    return [{None}]
+    G.add_weighted_edges_from(G.edges(data="weight", default=1))
+    m = len(G.edges())
+
+    # TODO: add a while loop instead of single pass once the code works
+    communities: list[set] = [{v} for v in G.nodes()]
+
+    communities = move_nodes_fast(G, communities, m)
+    communities = refine_communities(G, communities)
+    G_hyper = hyper_graph(G, communities)
+
+    return communities
 
 
 def max_delta(
-    G: nx.Graph, v_i: Any, neigh_communities: list[set[Any]], m: int
+    G: nx.Graph, v: Any, neigh_communities: list[set[Any]], m: int
 ) -> tuple[int, float]:
-    deltas = [modularity_gain(G, v_i, community, m) for community in neigh_communities]
+    deltas = [modularity_gain(G, v, community, m) for community in neigh_communities]
     max_delta = max(deltas)
     return deltas.index(max_delta), max_delta
 
@@ -22,17 +31,16 @@ def max_delta(
 def move_nodes_fast(
     G: nx.Graph, communities: list[set[Any]], n_edges: int
 ) -> list[set[Any]]:
-    Q: list[Any] = [G.nodes]
+    Q = list(G.nodes)
     while len(Q) != 0:
-        v_i = Q.pop(0)
-        max_index, max_delta = max_delta(G, v_i, communities, n_edges)
-        if max_delta > 0:
-            communities[max_index].add(v_i)
-            neighbors = [
-                neigh for neigh in G[v_i] if neigh not in communities[max_index]
-            ]
-            # always append or only if not in Q? This needs to be verified
-            Q.append(neighbors)
+        v = Q.pop(0)
+        # TODO: fix the error here; remove the node from its community as well
+        max_index, delta = max_delta(G, v, communities, n_edges)
+        if delta > 0:
+            communities[max_index].add(v)
+            for neighbor in G.neighbors(v):
+                if neighbor not in communities[max_index] and neighbor not in Q:
+                    Q.append(neighbor)
 
     return communities
 
@@ -50,7 +58,11 @@ def merge_nodes_subset(
     # clojure: function in a function
     def connected_measure(comm_1, comm_2):
         return sum(
-            [wt for _, v, wt in G.edges(n, data="weight", default=1) if v in comm]
+            [
+                wt
+                for _, v, wt in G.edges(comm_1, data="weight", default=1)
+                if v in comm_2
+            ]
         )
 
     well_connected_nodes: list[Any] = [
@@ -69,18 +81,20 @@ def merge_nodes_subset(
                 and connected_measure(comm, subset - comm)
                 > len(comm) * (len(subset) - len(comm))
             ]
-            # generate probabilities for each considered community
-            proba_comms = []
-            for comm in well_connected_comms:
-                mod = modularity_gain(G, v, comm, len(G.edges()))
-                if mod >= 0:
-                    proba_comms.append(exp(1 / 2 * mod))
-                else:
-                    proba_comms.append(0)
 
-            # necessary to unpack the list returned by choices()
-            [selected_comm] = choices(well_connected_comms, proba_comms, k=1)
-            selected_comm.add(v)
+            if len(well_connected_comms) > 0:
+                # generate probabilities for each considered community
+                proba_comms = []
+                for comm in well_connected_comms:
+                    mod = modularity_gain(G, v, comm, len(G.edges()))
+                    if mod >= 0:
+                        proba_comms.append(exp(10 * mod))
+                    else:
+                        proba_comms.append(0)
+
+                # necessary to unpack the list returned by choices()
+                [selected_comm] = choices(well_connected_comms, proba_comms, k=1)
+                selected_comm.add(v)
 
     return communities
 
@@ -126,7 +140,7 @@ toy_graph = [
     (2, 4),
 ]
 
-G = nx.Graph(toy_graph)
+G = nx.Graph(edgelist)
 start = time.time()
 final_communities = leiden(G)
 stop = time.time()
