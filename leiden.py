@@ -1,17 +1,19 @@
-import networkx as nx
 from louvain import get_neighbors_communities, remove_v, modularity_gain, hyper_graph
+import networkx as nx
 from math import exp
 from random import choices
-from typing import Any
 import time
+from typing import TypeVar
+
+T = TypeVar("T")
 
 
-def leiden(G: nx.Graph) -> list[set[Any]]:
+def leiden(G: nx.Graph) -> list[set[T]]:
     G.add_weighted_edges_from(G.edges(data="weight", default=1))
     m = len(G.edges())
 
     # TODO: add a while loop instead of single pass once the code works
-    communities: list[set] = [{v} for v in G.nodes()]
+    communities: list[set[T]] = [{v} for v in G.nodes()]
 
     communities = move_nodes_fast(G, communities, m)
     communities = refine_communities(G, communities)
@@ -21,7 +23,7 @@ def leiden(G: nx.Graph) -> list[set[Any]]:
 
 
 def max_delta(
-    G: nx.Graph, v: Any, neigh_communities: list[set[Any]], m: int
+    G: nx.Graph, v: T, neigh_communities: list[set[T]], m: int
 ) -> tuple[int, float]:
     deltas = [modularity_gain(G, v, community, m) for community in neigh_communities]
     max_delta = max(deltas)
@@ -29,8 +31,8 @@ def max_delta(
 
 
 def move_nodes_fast(
-    G: nx.Graph, communities: list[set[Any]], n_edges: int
-) -> list[set[Any]]:
+    G: nx.Graph, communities: list[set[T]], n_edges: int
+) -> list[set[T]]:
     Q = list(G.nodes)
     while len(Q) != 0:
         v = Q.pop(0)
@@ -45,18 +47,18 @@ def move_nodes_fast(
     return communities
 
 
-def refine_communities(G: nx.Graph, communities: list[set[Any]]) -> list[set[Any]]:
-    refined_comms: list[set[Any]] = [{x} for x in G.nodes()]
+def refine_communities(G: nx.Graph, communities: list[set[T]]) -> list[set[T]]:
+    refined_comms: list[set[T]] = [{v} for v in G.nodes()]
     for comm in communities:
         refined_comms = merge_nodes_subset(G, refined_comms, comm)
     return refined_comms
 
 
 def merge_nodes_subset(
-    G: nx.Graph, communities: list[set[Any]], subset: set[Any]
-) -> list[set[Any]]:
+    G: nx.Graph, communities: list[set[T]], subset: set[T]
+) -> list[set[T]]:
     # clojure: function in a function
-    def connected_measure(comm_1, comm_2):
+    def connected_measure(comm_1: T | set[T], comm_2: set[T]) -> int:
         return sum(
             [
                 wt
@@ -65,7 +67,7 @@ def merge_nodes_subset(
             ]
         )
 
-    well_connected_nodes: list[Any] = [
+    well_connected_nodes = [
         v for v in subset if connected_measure(v, subset - {v}) >= (len(subset) - 1)
     ]
 
@@ -74,7 +76,7 @@ def merge_nodes_subset(
         comm_v = [comm for comm in communities if v in comm][0]
         if len(comm_v) == 1:
             # consider only well connected communities
-            well_connected_comms: list[set] = [
+            well_connected_comms: list[set[T]] = [
                 comm
                 for comm in communities
                 if comm.issubset(subset)
