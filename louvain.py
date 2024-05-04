@@ -158,15 +158,3 @@ toy_graph = [
     (1, 3),
     (2, 4),
 ]
-
-G = nx.read_edgelist("./sbb.edgelist", delimiter=";", create_using=nx.Graph)
-connected_comp = nx.connected_components(G)
-max_connected_comp = max(connected_comp)
-print("Number of nodes in largest connected component:", len(max_connected_comp))
-
-sub_G = nx.Graph(G.subgraph(max_connected_comp))
-start = time.time()
-final_communities = louvain(sub_G)
-stop = time.time()
-print("Number of communities:", len(final_communities))
-print("Wall clock time", stop - start)
