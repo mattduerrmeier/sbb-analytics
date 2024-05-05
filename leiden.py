@@ -15,9 +15,38 @@ def leiden(G: nx.Graph) -> list[set[T]]:
     # TODO: add a while loop instead of single pass once the code works
     communities: list[set[T]] = [{v} for v in G.nodes()]
 
+    # evolved = True
+    # while evolved:
+    #     original_communities = communities.copy()
+    #     for v in G.nodes():
+    #         communities = move_nodes_fast(G, communities, m)
+    #         communities = refine_communities(G, communities)
+    #
+    #     # check if converged
+    #     if original_communities == communities:
+    #         evolved = False
+    #
+    # G_hyper = hyper_graph(G, communities)
+    # communities = [{v} for v in G_hyper.nodes()]
+    #
+    # evolved = True
+    # while evolved:
+    #     original_communities = communities.copy()
+    #     for v in G_hyper.nodes():
+    #         communities = move_nodes_fast(G_hyper, communities, m)
+    #         communities = refine_communities(G_hyper, communities)
+    #
+    #     # check if converged
+    #     if original_communities == communities:
+    #         evolved = False
+    #
+    # return communities
+
     communities = move_nodes_fast(G, communities, m)
     communities = refine_communities(G, communities)
     G_hyper = hyper_graph(G, communities)
+
+    print(communities)
 
     return communities
 
@@ -36,13 +65,21 @@ def move_nodes_fast(
     Q = list(G.nodes)
     while len(Q) != 0:
         v = Q.pop(0)
+        start_comm = communities.copy()
         # TODO: fix the error here; remove the node from its community as well
+        for i, comm in enumerate(communities):
+            if v in comm:
+                communities[i].remove(v)
+                if len(comm) == 0:
+                    communities.remove(comm)
+                break
         max_index, delta = max_delta(G, v, communities, n_edges)
         if delta > 0:
             communities[max_index].add(v)
-            for neighbor in G.neighbors(v):
-                if neighbor not in communities[max_index] and neighbor not in Q:
-                    Q.append(neighbor)
+            if start_comm != communities:
+                for neighbor in G.neighbors(v):
+                    if neighbor not in communities[max_index] and neighbor not in Q:
+                        Q.append(neighbor)
 
     return communities
 
@@ -75,7 +112,7 @@ def merge_nodes_subset(
         # get the community to which v belongs to
         comm_v = [comm for comm in communities if v in comm][0]
         if len(comm_v) == 1:
-            # consider only well connected communities
+            # consider only well-connected communities
             well_connected_comms: list[set[T]] = [
                 comm
                 for comm in communities
