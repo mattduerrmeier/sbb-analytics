@@ -4,6 +4,7 @@ from math import exp
 from random import choices
 import time
 from typing import TypeVar
+import random
 
 T = TypeVar("T")
 
@@ -45,8 +46,6 @@ def leiden(G: nx.Graph) -> list[set[T]]:
     communities = move_nodes_fast(G, communities, m)
     communities = refine_communities(G, communities)
     G_hyper = hyper_graph(G, communities)
-
-    print(communities)
 
     return communities
 
@@ -107,18 +106,18 @@ def merge_nodes_subset(
     well_connected_nodes = [
         v for v in subset if connected_measure(v, subset - {v}) >= (len(subset) - 1)
     ]
-
+    # Visit nodes in random order
+    #random.shuffle(well_connected_nodes)
     for v in well_connected_nodes:
-        # get the community to which v belongs to
-        comm_v = [comm for comm in communities if v in comm][0]
-        if len(comm_v) == 1:
+        # consider only nodes that have not yet been merged
+        if {v} in communities:
+
             # consider only well-connected communities
             well_connected_comms: list[set[T]] = [
                 comm
                 for comm in communities
                 if comm.issubset(subset)
-                and connected_measure(comm, subset - comm)
-                > len(comm) * (len(subset) - len(comm))
+                and connected_measure(comm, subset-comm) > len(comm)/7 * (len(subset) - len(comm))
             ]
 
             if len(well_connected_comms) > 0:
@@ -134,7 +133,7 @@ def merge_nodes_subset(
                 # necessary to unpack the list returned by choices()
                 [selected_comm] = choices(well_connected_comms, proba_comms, k=1)
                 selected_comm.add(v)
-
+                communities.remove({v})
     return communities
 
 
@@ -184,4 +183,5 @@ start = time.time()
 final_communities = leiden(G)
 stop = time.time()
 print("Number of communities:", len(final_communities))
+print("finales communities: ", final_communities)
 print("Wall clock time", stop - start)
