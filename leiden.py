@@ -5,6 +5,7 @@ from random import choices
 import time
 from typing import TypeVar
 import random
+import operator
 
 T = TypeVar("T")
 
@@ -12,49 +13,19 @@ T = TypeVar("T")
 def leiden(G: nx.Graph) -> list[set[T]]:
     G.add_weighted_edges_from(G.edges(data="weight", default=1))
     m = len(G.edges())
+    communities: list[set[T]] = [{v} for v in G.nodes()]
 
-    # TODO: add a while loop instead of single pass once the code works
-
-
-    # evolved = True
-    # while evolved:
-    #     original_communities = communities.copy()
-    #     for v in G.nodes():
-    #         communities = move_nodes_fast(G, communities, m)
-    #         communities = refine_communities(G, communities)
-    #
-    #     # check if converged
-    #     if original_communities == communities:
-    #         evolved = False
-    #
-    # G_hyper = hyper_graph(G, communities)
-    # communities = [{v} for v in G_hyper.nodes()]
-    #
-    # evolved = True
-    # while evolved:
-    #     original_communities = communities.copy()
-    #     for v in G_hyper.nodes():
-    #         communities = move_nodes_fast(G_hyper, communities, m)
-    #         communities = refine_communities(G_hyper, communities)
-    #
-    #     # check if converged
-    #     if original_communities == communities:
-    #         evolved = False
-    #
-    # return communities
-
-    # we cannot do the final comparison. We have to find another way.
-    evolved = True
-    while evolved:
-        communities: list[set[T]] = [{v} for v in G.nodes()]
-        original_communities = communities.copy()
+    done = False
+    while not done:
         communities = move_nodes_fast(G, communities, m)
-        communities = refine_communities(G, communities)
-        G = hyper_graph(G, communities)
-        if original_communities == communities:
-            evolved = False
-
-    return communities
+        if len(G.nodes) == len(communities):
+            done = True
+        if not done:
+            communities_refined = refine_communities(G, communities)
+            G = hyper_graph(G, communities_refined)
+            communities = [{v for v in C if v in G.nodes} for C in communities]
+            print(communities)
+    return list(set().union(*communities))
 
 
 def max_delta(
