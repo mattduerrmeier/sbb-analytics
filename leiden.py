@@ -14,7 +14,7 @@ def leiden(G: nx.Graph) -> list[set[T]]:
     m = len(G.edges())
 
     # TODO: add a while loop instead of single pass once the code works
-    communities: list[set[T]] = [{v} for v in G.nodes()]
+
 
     # evolved = True
     # while evolved:
@@ -43,9 +43,16 @@ def leiden(G: nx.Graph) -> list[set[T]]:
     #
     # return communities
 
-    communities = move_nodes_fast(G, communities, m)
-    communities = refine_communities(G, communities)
-    G_hyper = hyper_graph(G, communities)
+    # we cannot do the final comparison. We have to find another way.
+    evolved = True
+    while evolved:
+        communities: list[set[T]] = [{v} for v in G.nodes()]
+        original_communities = communities.copy()
+        communities = move_nodes_fast(G, communities, m)
+        communities = refine_communities(G, communities)
+        G = hyper_graph(G, communities)
+        if original_communities == communities:
+            evolved = False
 
     return communities
 
