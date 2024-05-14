@@ -1,5 +1,4 @@
-# ignore dataset
-data/
+# ignore dataset download
 data.zip
 
 # Byte-compiled / optimized / DLL files
