@@ -4,6 +4,7 @@ from math import exp
 from random import choices
 import time
 from typing import TypeVar
+import copy
 import random
 import operator
 
@@ -18,14 +19,14 @@ def leiden(G: nx.Graph) -> list[set[T]]:
     done = False
     while not done:
         communities = move_nodes_fast(G, communities, m)
-        if len(G.nodes) == len(communities):
+        if len(G.nodes) == len(communities) or len(communities) == 1:
             done = True
         if not done:
             communities_refined = refine_communities(G, communities)
             G = hyper_graph(G, communities_refined)
             communities = [{v for v in C if v in G.nodes} for C in communities]
-            print(communities)
-    return list(set().union(*communities))
+            #print(communities)
+    return communities  # list(set().union(*communities))
 
 
 def max_delta(
@@ -36,14 +37,11 @@ def max_delta(
     return deltas.index(max_delta), max_delta
 
 
-def move_nodes_fast(
-    G: nx.Graph, communities: list[set[T]], n_edges: int
-) -> list[set[T]]:
+def move_nodes_fast(G: nx.Graph, communities: list[set[T]], n_edges: int) -> list[set[T]]:
     Q = list(G.nodes)
     while len(Q) != 0:
         v = Q.pop(0)
-        start_comm = communities.copy()
-        # TODO: fix the error here; remove the node from its community as well
+        start_comm = copy.deepcopy(communities)
         for i, comm in enumerate(communities):
             if v in comm:
                 communities[i].remove(v)
@@ -85,7 +83,7 @@ def merge_nodes_subset(
         v for v in subset if connected_measure(v, subset - {v}) >= (len(subset) - 1)
     ]
     # Visit nodes in random order
-    #random.shuffle(well_connected_nodes)
+    random.shuffle(well_connected_nodes)
     for v in well_connected_nodes:
         # consider only nodes that have not yet been merged
         if {v} in communities:
@@ -109,7 +107,11 @@ def merge_nodes_subset(
                         proba_comms.append(0)
 
                 # necessary to unpack the list returned by choices()
-                [selected_comm] = choices(well_connected_comms, proba_comms, k=1)
+                if max(proba_comms) == 0:
+                    [selected_comm] = choices(well_connected_comms, k=1)
+                else:
+                    [selected_comm] = choices(well_connected_comms, proba_comms, k=1)
+
                 selected_comm.add(v)
                 communities.remove({v})
     return communities
