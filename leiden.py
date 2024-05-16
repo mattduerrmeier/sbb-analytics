@@ -19,14 +19,13 @@ def leiden(G: nx.Graph) -> list[set[T]]:
     done = False
     while not done:
         communities = move_nodes_fast(G, communities, m)
-        if len(G.nodes) == len(communities) or len(communities) == 1:
+        if len(G.nodes) == len(communities) or len(communities) <= 2:
             done = True
         if not done:
             communities_refined = refine_communities(G, communities)
             G = hyper_graph(G, communities_refined)
             communities = [{v for v in C if v in G.nodes} for C in communities]
-            #print(communities)
-    return communities  # list(set().union(*communities))
+    return communities
 
 
 def max_delta(
@@ -113,7 +112,8 @@ def merge_nodes_subset(
                     [selected_comm] = choices(well_connected_comms, proba_comms, k=1)
 
                 selected_comm.add(v)
-                communities.remove({v})
+                if len(selected_comm) != 1:
+                    communities.remove({v})
     return communities
 
 
