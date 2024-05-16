@@ -107,7 +107,6 @@ def hyper_graph(G: nx.Graph, communities: list[set[T]]) -> nx.Graph:
         new_G.add_node(i, nodes=com)
         for n in com:
             node2com[n] = i
-
     for u, v, wt in G.edges(data=True):
         com_1 = node2com[u]
         com_2 = node2com[v]
@@ -116,3 +115,5 @@ def hyper_graph(G: nx.Graph, communities: list[set[T]]) -> nx.Graph:
         new_G.add_edge(com_1, com_2, weight=wt["weight"] + temp_wt["weight"])
 
     return new_G
+
+# TODO: return all nodes in communities, not the hypernodes
