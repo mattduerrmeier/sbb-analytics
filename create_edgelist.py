@@ -24,7 +24,7 @@ with GraphDatabase.driver(URI, auth=AUTH) as driver:
     df = driver.execute_query(
         """
         MATCH (r:Route)<-[:USES]-(t:Trip)-[:STOPSAT]->(stt:StopTime)-[:REFERENCES]->(s:Stop) 
-        WHERE r.type >= "100" AND r.type <= "120" 
+        WHERE r.type >= 100 AND r.type <= 120
         WITH s.name AS station_name, collect(DISTINCT s.location)[0] AS lon_lat
         ORDER BY station_name
         RETURN station_name, lon_lat
@@ -48,7 +48,7 @@ gdf.to_file("stations.geojson", driver='GeoJSON')
 df_edges = driver.execute_query(
     """
     MATCH (r:Route)<-[:USES]-(t:Trip)-[:STOPSAT]->(stt:StopTime)-[:REFERENCES]->(s:Stop) 
-    WHERE r.type >= "100" AND r.type <= "120" 
+    WHERE r.type >= 100 AND r.type <= 120
     WITH r, t, s, stt 
     ORDER BY r.id, t.id, stt.stop_sequence 
     RETURN r.id AS route_id, t.id AS trip_id, COLLECT(s.name) AS paths 
