@@ -1,5 +1,6 @@
 # ignore dataset download
 data.zip
+data/swiss-boundaries.gkpg
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

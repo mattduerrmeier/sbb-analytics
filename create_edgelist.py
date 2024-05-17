@@ -41,8 +41,7 @@ gdf = gpd.GeoDataFrame(df, geometry="geometry")
 
 # save geo df as geoJSON
 print("Writing station locations to stations.geojson")
-gdf.to_file("stations.geojson", driver='GeoJSON')
-
+gdf.to_file("data/stations.geojson", driver='GeoJSON')
 
 # cypher query for edgelist
 df_edges = driver.execute_query(
@@ -65,4 +64,4 @@ sbb_edgelist = df_edges["paths"].explode().unique()
 
 print("Writing edgelist to sbb.edgelist")
 train = pd.DataFrame(list(sbb_edgelist), columns=["from", "to"])
-train.to_csv("sbb.edgelist", sep=";", header=False, index=False)
+train.to_csv("data/sbb.edgelist", sep=";", header=False, index=False)
