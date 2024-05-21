@@ -7,7 +7,7 @@ T = TypeVar("T")
 
 
 # consumes the generator until the very last iteration
-def louvain_communites(G: nx.Graph) -> list[set[T]]:
+def louvain_implementation(G: nx.Graph) -> list[set[T]]:
     comp = louvain_generator(G)
     final_communities = None
     for com in comp:
