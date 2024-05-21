@@ -1,6 +1,7 @@
 # ignore dataset download
 data.zip
-data/swiss-boundaries.gkpg
+# ignore swiss boundaries: file is too heavy
+data/swiss-boundaries.gpkg
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
