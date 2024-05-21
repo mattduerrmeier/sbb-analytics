@@ -6,6 +6,16 @@ import copy
 T = TypeVar("T")
 
 
+# consumes the generator until the very last iteration
+def louvain_communites(G: nx.Graph) -> list[set[T]]:
+    comp = louvain_iterator(G)
+    final_communities = None
+    for com in comp:
+        final_communities = com
+
+    return final_communities
+
+
 def louvain(G: nx.Graph) -> list[set[T]]:
     G.add_weighted_edges_from(G.edges(data="weight", default=1))
     m = len(G.edges())
@@ -41,7 +51,9 @@ def louvain(G: nx.Graph) -> list[set[T]]:
         for v in G_hyper.nodes():
             # 2: remove the node from its community
             communities = remove_v(communities, v)
-            neighbors_communities = get_neighbors_communities(G_hyper.neighbors(v), communities)
+            neighbors_communities = get_neighbors_communities(
+                G_hyper.neighbors(v), communities
+            )
             # 3: add node to the community that maximizes delta
             highest_delta_community = max_delta(G_hyper, v, neighbors_communities, m)
             highest_delta_community.add(v)
@@ -50,6 +62,7 @@ def louvain(G: nx.Graph) -> list[set[T]]:
         if original_communities == communities or len(communities) <= 180:
             evolved = False
     return rebuild_communities(node2com, communities)
+
 
 def louvain_iterator(G: nx.Graph) -> list[set[T]]:
     G.add_weighted_edges_from(G.edges(data="weight", default=1))
@@ -88,7 +101,9 @@ def louvain_iterator(G: nx.Graph) -> list[set[T]]:
         for v in G_hyper.nodes():
             # 2: remove the node from its community
             communities = remove_v(communities, v)
-            neighbors_communities = get_neighbors_communities(G_hyper.neighbors(v), communities)
+            neighbors_communities = get_neighbors_communities(
+                G_hyper.neighbors(v), communities
+            )
             # 3: add node to the community that maximizes delta
             highest_delta_community = max_delta(G_hyper, v, neighbors_communities, m)
             highest_delta_community.add(v)
@@ -97,6 +112,7 @@ def louvain_iterator(G: nx.Graph) -> list[set[T]]:
         if original_communities == communities or len(communities) <= 180:
             evolved = False
         yield rebuild_communities(node2com, communities)
+
     return rebuild_communities(node2com, communities)
 
 
@@ -147,7 +163,9 @@ def modularity_gain(G: nx.Graph, v: T, community: set[T], m: int) -> float:
     return 1 / (2 * m) * (d_ij - (d_i * d_j) / m)
 
 
-def hyper_graph(G: nx.Graph, communities: list[set[T]], node2com: dict[T, int]) -> tuple[nx.Graph, dict[T, int]]:
+def hyper_graph(
+    G: nx.Graph, communities: list[set[T]], node2com: dict[T, int]
+) -> tuple[nx.Graph, dict[T, int]]:
     new_G = nx.Graph()
 
     for i, com in enumerate(communities):
@@ -214,14 +232,14 @@ edgelist = [
     (11, 13),
 ]
 
-#G = nx.Graph(edgelist)
+# G = nx.Graph(edgelist)
 G = nx.read_edgelist("data/sbb.edgelist", delimiter=";", create_using=nx.Graph)
 connected_comp = nx.connected_components(G)
 max_connected_comp = max(connected_comp)
 sub_G = G.subgraph(max_connected_comp)
 G = nx.Graph(sub_G)
-start = time.time()
+
 final_communities = louvain(G)
-print(len(final_communities))
-print("final communities:", final_communities)
-stop = time.time()
+print("Simple: ", len(final_communities))
+final_communities = louvain_communites(G)
+print("Generator: ", len(final_communities))
