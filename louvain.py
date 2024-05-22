@@ -68,7 +68,8 @@ def louvain_generator(G: nx.Graph) -> list[set[T]]:
             # stop if process converges or remaining 2 communities
             if original_communities == communities:
                 evolved = False
-            yield rebuild_communities(node2com, communities)
+
+        yield rebuild_communities(node2com, communities)
 
     return rebuild_communities(node2com, communities)
 
@@ -159,48 +160,3 @@ def rebuild_communities(dict_of_node, commu):
                 final_comm[i].append(node)
 
     return [set(comm) for comm in final_comm]
-
-
-edgelist = [
-    (0, 2),
-    (0, 3),
-    (0, 4),
-    (0, 5),
-    (1, 2),
-    (1, 4),
-    (1, 7),
-    (2, 4),
-    (2, 5),
-    (2, 6),
-    (3, 7),
-    (4, 10),
-    (5, 7),
-    (5, 11),
-    (6, 7),
-    (6, 11),
-    (8, 9),
-    (8, 10),
-    (8, 11),
-    (8, 14),
-    (8, 15),
-    (9, 12),
-    (9, 14),
-    (10, 11),
-    (10, 12),
-    (10, 13),
-    (10, 14),
-    (11, 13),
-]
-
-G = nx.Graph(edgelist)
-G = nx.read_edgelist("data/sbb.edgelist", delimiter=";", create_using=nx.Graph)
-connected_comp = nx.connected_components(G)
-max_connected_comp = max(connected_comp)
-sub_G = G.subgraph(max_connected_comp)
-G = nx.Graph(sub_G)
-
-final_communities = louvain_implementation(G)
-print(len(final_communities), final_communities)
-#print("Generator: ", len(final_communities))
-# print(count)
-# #gen = louvain_generator(G)
