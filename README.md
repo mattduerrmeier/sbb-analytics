@@ -8,7 +8,7 @@ We do community detection with Louvain, Girvan-Newman and Leiden, and benchmark 
 
 # Quick Start
 
-The [first section](#python) covers how to install Python dependencies.
+The [first section](#python-only) covers how to install Python dependencies.
 This step is **required** for both the Python-only and the full pipeline.
 The notebooks use the data in `data/` such that the project can still work without Neo4j.
 
