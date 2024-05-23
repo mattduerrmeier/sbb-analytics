@@ -2,6 +2,7 @@
 data.zip
 # ignore swiss boundaries: file is too heavy
 data/swiss-boundaries.gpkg
+*.png
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
