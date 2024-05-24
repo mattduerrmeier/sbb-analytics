@@ -9,11 +9,11 @@ We do community detection with Louvain, Girvan-Newman and Leiden, and benchmark 
 # Quick Start
 
 The [first section](#python-only) covers how to install Python dependencies.
-This step is **required** for both the Python-only and the full pipeline.
+**This step is required** for both the Python-only and the full pipeline.
 The notebooks use the data in `data/` such that the project can still work without Neo4j.
 
 The [second section](#neo4j-full-pipeline) covers how to reproduce the full pipeline with pre-processing steps.
-For this version of the project, you need to install Neo4j.
+For this version of the project, you need to install Neo4j 5 Community Edition.
 Neo4j is used to store the original timetable data, build the train network, and query the coordinates of the stations.
 
 ## Python Only
@@ -24,7 +24,10 @@ To install the required Python dependencies, run the following commands:
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
+# you can now start the jupyter notebook
+jupyter notebook
 ```
+
 The Jupyter notebooks contain the various steps of the network analysis.
 For convenience, we provide all the necessary data, such as benchmark results, graph edge list, and station coordinates in `data/`.
 
@@ -37,23 +40,28 @@ The three notebooks contain the following part of our project:
 
 This section covers how to run the full pipeline.
 Please ensure that you have installed the Python dependencies before proceeding with this section.
+You must install Neo4j version 5 Community Edition.
+This is not the same as the Desktop version.
+The installation instruction are available [here](https://neo4j.com/docs/operations-manual/current/installation/).
+You must be able to use the `cypher-shell` command.
 
-To configure the Neo4j database with the timetable data, you need to run the setup script.
-This script has only been tested on Debian-based operating systems.
-`neo4j/drop.sh` is a convenient script to drop the database
+Once you have the Python dependencies and Neo4j installed, you can run the commands below.
+The first argument of `setup.sh` is the path to the import path of Neo4j.
+Neo4j has documentation regarding the [default file locations](https://neo4j.com/docs/operations-manual/current/configuration/file-locations/).
+On Debian-based operating systems, it is `/var/lib/neo4j/import/`.
+The script has been tested on Debian-based operating systems.
+```
+./setup.sh <neo4j import path>
+python create_edgelist.py <username> <password> # replace with your neo4j username and password
+```
 
-`setup.sh` downloads the zip dataset from the Open Data Platform Mobility [(download link)](https://opentransportdata.swiss/en/dataset/timetable-2024-gtfs2020/resource/1cb3b923-6f2b-40ee-9a9a-900417e9fda3) and unzips it in the default Neo4j import directory.
-It inserts all the data in Neo4j.
+`setup.sh` downloads the zip dataset from the Open Data Platform Mobility [(download link)](https://opentransportdata.swiss/en/dataset/timetable-2024-gtfs2020/resource/1cb3b923-6f2b-40ee-9a9a-900417e9fda3), unzips it in Neo4j's import directory, and then inserts it in Neo4j.
 This step may take a while (between 10 and 15 minutes).
 
-After running this script, please run the `create_edgelist.py`.
-This Python script queries Neo4j to create the `data/sbb.edgelist` and `data/stations.geojson`.
+The `create_edgelist.py` script queries Neo4j to create the `data/sbb.edgelist` and `data/stations.geojson`.
 You must give it your Neo4j username and password as arguments.
 
-```
-./setup.sh
-python create_edgelist.py <username> <password> # replace with your neo4j username and password!
-```
+If something goes wrong with the database, you can edit and use `neo4j/drop.sh`.
 
 ## Swiss Map Plots
 

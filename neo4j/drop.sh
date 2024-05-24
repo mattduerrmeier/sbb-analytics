@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# This script only works with Debian-based operating systems with systemd.
+
 if [[ "$EUID" -ne 0 ]]; then
 	echo "Please run the script as root."
 	exit
