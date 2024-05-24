@@ -10,6 +10,12 @@ import operator
 
 T = TypeVar("T")
 
+"""
+This is an incomplete implementation of the Leiden algorithm.
+Unfortunately we were not able to finish it.
+There are still a few issues with the implementation.
+"""
+
 
 def leiden(G: nx.Graph) -> list[set[T]]:
     G.add_weighted_edges_from(G.edges(data="weight", default=1))
@@ -36,7 +42,9 @@ def max_delta(
     return deltas.index(max_delta), max_delta
 
 
-def move_nodes_fast(G: nx.Graph, communities: list[set[T]], n_edges: int) -> list[set[T]]:
+def move_nodes_fast(
+    G: nx.Graph, communities: list[set[T]], n_edges: int
+) -> list[set[T]]:
     Q = list(G.nodes)
     while len(Q) != 0:
         v = Q.pop(0)
@@ -86,13 +94,13 @@ def merge_nodes_subset(
     for v in well_connected_nodes:
         # consider only nodes that have not yet been merged
         if {v} in communities:
-
             # consider only well-connected communities
             well_connected_comms: list[set[T]] = [
                 comm
                 for comm in communities
                 if comm.issubset(subset)
-                and connected_measure(comm, subset-comm) > len(comm)/7 * (len(subset) - len(comm))
+                and connected_measure(comm, subset - comm)
+                > len(comm) / 7 * (len(subset) - len(comm))
             ]
 
             if len(well_connected_comms) > 0:
@@ -115,53 +123,3 @@ def merge_nodes_subset(
                 if len(selected_comm) != 1:
                     communities.remove({v})
     return communities
-
-
-# Graph Example from the lecture slides
-edgelist = [
-    (0, 2),
-    (0, 3),
-    (0, 4),
-    (0, 5),
-    (1, 2),
-    (1, 4),
-    (1, 7),
-    (2, 4),
-    (2, 5),
-    (2, 6),
-    (3, 7),
-    (4, 10),
-    (5, 7),
-    (5, 11),
-    (6, 7),
-    (6, 11),
-    (8, 9),
-    (8, 10),
-    (8, 11),
-    (8, 14),
-    (8, 15),
-    (9, 12),
-    (9, 14),
-    (10, 11),
-    (10, 12),
-    (10, 13),
-    (10, 14),
-    (11, 13),
-]
-
-toy_graph = [
-    (0, 1),
-    (0, 2),
-    (0, 3),
-    (1, 2),
-    (1, 3),
-    (2, 4),
-]
-
-G = nx.Graph(edgelist)
-start = time.time()
-final_communities = leiden(G)
-stop = time.time()
-print("Number of communities:", len(final_communities))
-print("finales communities: ", final_communities)
-print("Wall clock time", stop - start)

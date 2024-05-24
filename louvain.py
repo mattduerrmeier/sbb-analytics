@@ -1,10 +1,11 @@
 import networkx as nx
 from typing import TypeVar
+
 T = TypeVar("T")
 
 
 # consumes the generator until the very last iteration
-def louvain_implementation(graph: nx.Graph) -> set[T]:
+def louvain_implementation(graph: nx.Graph) -> list[set[T]]:
     comp = louvain_generator(graph)
     final_communities = None
     for com in comp:
@@ -45,7 +46,9 @@ def step_1(g, m, passage_1):
             # 2: remove the node from its community
             communities, temp_com = remove_v(communities, v)
 
-            neighbors_communities = get_neighbors_communities(g.neighbors(v), communities)
+            neighbors_communities = get_neighbors_communities(
+                g.neighbors(v), communities
+            )
             # 3: add node to the community that maximizes delta
             highest_delta_community, gain = max_delta(g, v, neighbors_communities, m)
             highest_delta_community.add(v)
@@ -59,11 +62,14 @@ def step_1(g, m, passage_1):
     return communities, list_of_modularity
 
 
-# TODO: Improve this function. How can we get the neighbors without the nested for loop?
 # returns all communities adjacent to the node
-def get_neighbors_communities(neighbors: list[T], communities: list[set[T]]) -> list[set[T]]:
+def get_neighbors_communities(
+    neighbors: list[T], communities: list[set[T]]
+) -> list[set[T]]:
     neigh_communities = []
-    all_neigh_communities = [comm for neigh in neighbors for comm in communities if neigh in comm]
+    all_neigh_communities = [
+        comm for neigh in neighbors for comm in communities if neigh in comm
+    ]
 
     for neigh in all_neigh_communities:
         if neigh not in neigh_communities:
@@ -86,7 +92,9 @@ def remove_v(communities: list[set[T]], v: T) -> tuple[list[set[T]], set[T]]:
 
 
 # keep the highest modularity gain
-def max_delta(G: nx.Graph, v: T, neigh_communities: list[set[T]], m: int) -> tuple[set[T], float]:
+def max_delta(
+    G: nx.Graph, v: T, neigh_communities: list[set[T]], m: int
+) -> tuple[set[T], float]:
     deltas = [modularity_gain(G, v, community, m) for community in neigh_communities]
     return neigh_communities[deltas.index(max(deltas))], max(deltas)
 
@@ -96,7 +104,9 @@ def modularity_gain(G: nx.Graph, v: T, community: set[T], m: int) -> float:
     # creating the dict once is faster than accessing the degrees twice
     degrees = dict(G.degree(community | {v}, weight="weight"))
 
-    d_ij = 2 * sum([wt for _, w, wt in G.edges(v, data="weight", default=1) if w in community])
+    d_ij = 2 * sum(
+        [wt for _, w, wt in G.edges(v, data="weight", default=1) if w in community]
+    )
     d_i = degrees[v]
     d_j = sum([degrees[n] for n in community])
 
@@ -104,7 +114,9 @@ def modularity_gain(G: nx.Graph, v: T, community: set[T], m: int) -> float:
 
 
 # merging all nodes within a community into a hypernode.
-def hyper_graph(g: nx.Graph, communities: list[set[T]], node2com: dict[T, int]) -> tuple[nx.Graph, dict[T, int]]:
+def hyper_graph(
+    g: nx.Graph, communities: list[set[T]], node2com: dict[T, int]
+) -> tuple[nx.Graph, dict[T, int]]:
     new_g = nx.Graph()
 
     for i, com in enumerate(communities):
